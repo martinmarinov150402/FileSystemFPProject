@@ -7,7 +7,7 @@ import System.IO
 
 data Tree a = EmptyNode
             | Node (Tree a) a [Tree a] 
-            | File a 
+            | File a a
             deriving (Eq, Show)
             
 
@@ -20,18 +20,19 @@ emptytree = EmptyNode
 getParrentNode :: Tree String -> Tree String
 getParrentNode (EmptyNode) = error "Empty"
 getParrentNode (Node p _ _) = p
-getParrentNode (File _) = error "This is a file"
+getParrentNode (File _ _ ) = error "This is a file"
 
 rootT :: Tree String -> String
 rootT EmptyNode = error "Empty"
 rootT (Node _ a _) = a
+rootT (File name _) = name
 
 getNodeFromPath :: String -> Tree String -> Tree String
 getNodeFromPath "" fs = fs
 getNodeFromPath str fs = cdUtil (splitOn "/" str) (Just fs)
 
 testTree :: Tree String
-testTree = Node EmptyNode "/" [Node testTree "etc" [], Node testTree "mnt" [], Node testTree "home" []]
+testTree = Node EmptyNode "/" [Node testTree "etc" [ (File "bativan.txt" "Bai Ivan"), (File "eqk.txt" " e mnogo qk")], Node testTree "mnt" [], Node testTree "home" []]
 
 fileSystem :: Tree String
 fileSystem = testTree
@@ -58,6 +59,7 @@ ls (Just str) fs = makeStringFromChildren (getChildren (getNodeFromPath str fs))
 cdUtil :: [String] ->  (Maybe (Tree String)) -> Tree String
 cdUtil _ Nothing = error "Invalid path"
 cdUtil [] (Just fs) = fs
+cdUtil _ (Just (File s txt)) = File s txt 
 cdUtil (x:xs) (Just (Node par a trees))
  | (x == "") = cdUtil xs (Just fileSystem)
  | (x == "..") = cdUtil xs (Just par)
@@ -72,12 +74,36 @@ getNodeTree (Node _ _ trees) = trees
 
 --testTree = [5 [4 emptyTree emptyTree] [6 emptyTree emptyTree]]
 
+isFile :: Tree String -> Bool
+isFile (File _ _ ) = True
+isFile _ = False
+
+checkFileName :: Tree String -> String -> Bool
+checkFileName (File name _ ) n = (n == name)
+
+rmcmd :: [String] -> Tree String -> Tree String
+rmcmd [] fs = fs 
+rmcmd (x:xs) (Node par name children) = (Node par name (filter (\ f -> (isFile f) /= True || (checkFileName f x) /= True ) children))
+
+getFileContent :: Tree String -> String
+getFileContent (File _ cont) = cont
+
+catCmd :: [String] -> Tree String -> String 
+catCmd [] _ = ""
+catCmd (x:xs) fs = (getFileContent (getNodeFromPath x fs)) ++ (catCmd xs fs)
+
+--rmcmd2 :: Tree String -> Tree String
+--rmcmd2 EmptyNode -> EmptyNode
+--rmcmd2 (Node par str li) -> (node par str li)
+--rmcmd2 (File name text par)  
+
 processCommand _ [] = error "Empty command"
 processCommand fs (x:xs) = do
     case x of "pwd" -> putStrLn $ rootT fs
               "cd" -> inputCommand $ getNodeFromPath (head xs) fs
               "ls" -> if xs == [] then putStrLn (ls Nothing fs) else putStrLn (ls (Just (head xs)) fs)
-              "rm" -> 
+              "rm" -> inputCommand $ rmcmd xs fs  
+              "cat" -> putStrLn $ catCmd xs fs
     inputCommand fs
 
 --inputCommand fs
