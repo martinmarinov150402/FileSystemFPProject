@@ -81,9 +81,17 @@ isFile _ = False
 checkFileName :: Tree String -> String -> Bool
 checkFileName (File name _ ) n = (n == name)
 
+hasChildWithName :: [Tree String] -> String -> Bool
+hasChildWithName [] _ = False
+hasChildWithName children name = (filter (\ f -> (isFile f) /= True || (checkFileName f name) == True ) children) /= []
+
+removeFromParrent :: Tree String -> Tree String -> Tree String
+removeFromParrent EmptyNode _  = EmptyNode
+removeFromParrent (Node p2 nodeN children) callTree = (Node (removeFromParrent p2 (Node p2 nodeN (callTree : filter (\n -> (rootT n) /= (rootT callTree)) children))) nodeN (callTree : filter (\n -> (rootT n) /= (rootT callTree)) children))
+
 rmcmd :: [String] -> Tree String -> Tree String
 rmcmd [] fs = fs 
-rmcmd (x:xs) (Node par name children) = (Node par name (filter (\ f -> (isFile f) /= True || (checkFileName f x) /= True ) children))
+rmcmd (x:xs) (Node par name children) = (Node (removeFromParrent par (Node par name (filter (\ f -> (isFile f) /= True || (checkFileName f x) /= True ) children)))  name (filter (\ f -> (isFile f) /= True || (checkFileName f x) /= True ) children))
 
 getFileContent :: Tree String -> String
 getFileContent (File _ cont) = cont
@@ -91,6 +99,22 @@ getFileContent (File _ cont) = cont
 catCmd :: [String] -> Tree String -> String 
 catCmd [] _ = ""
 catCmd (x:xs) fs = (getFileContent (getNodeFromPath x fs)) ++ (catCmd xs fs)
+
+catCmd2 :: [String] -> String -> Tree String -> Tree String
+catCmd2 li fileName (Node par name children) = (Node par name ((File fileName (catCmd li (Node par name children))) : children))
+
+getHead :: [String] -> String
+getHead (x:xs) = x
+
+getAfterSign :: [String] -> String
+getAfterSign (x:xs) = if x == ">" then getHead xs else getAfterSign xs
+
+getBeforeSign :: [String] -> [String]
+getBeforeSign (">":_) = []
+getBeforeSign (x:xs) = x : (getBeforeSign xs)
+
+catCmdProcess :: [String] -> Tree String -> IO()
+catCmdProcess li fs = if getAfterSign li == [] then (putStrLn (catCmd li fs)) else (inputCommand (catCmd2 (getBeforeSign li) (getAfterSign li) fs))
 
 --rmcmd2 :: Tree String -> Tree String
 --rmcmd2 EmptyNode -> EmptyNode
@@ -103,7 +127,7 @@ processCommand fs (x:xs) = do
               "cd" -> inputCommand $ getNodeFromPath (head xs) fs
               "ls" -> if xs == [] then putStrLn (ls Nothing fs) else putStrLn (ls (Just (head xs)) fs)
               "rm" -> inputCommand $ rmcmd xs fs  
-              "cat" -> putStrLn $ catCmd xs fs
+              "cat" -> putStrLn $ catCmd xs fs 
     inputCommand fs
 
 --inputCommand fs
