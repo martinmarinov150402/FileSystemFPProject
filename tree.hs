@@ -57,7 +57,7 @@ ls Nothing fs = makeStringFromChildren (getChildren fs)
 ls (Just str) fs = makeStringFromChildren (getChildren (getNodeFromPath str fs))
 
 cdUtil :: [String] ->  (Maybe (Tree String)) -> Tree String
-cdUtil _ Nothing = error "Invalid path"
+cdUtil _ Nothing = testTree
 cdUtil [] (Just fs) = fs
 cdUtil _ (Just (File s txt)) = File s txt 
 cdUtil (x:xs) (Just (Node par a trees))
@@ -128,6 +128,7 @@ processCommand fs (x:xs) = do
               "ls" -> if xs == [] then putStrLn (ls Nothing fs) else putStrLn (ls (Just (head xs)) fs)
               "rm" -> inputCommand $ rmcmd xs fs  
               "cat" -> putStrLn $ catCmd xs fs 
+              otherwise -> putStrLn "Unknown command"
     inputCommand fs
 
 --inputCommand fs
