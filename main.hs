@@ -125,14 +125,24 @@ beforeSign (x:xs) sign = if x == sign then [] else x : beforeSign xs sign
 
 afterSignHelper :: [String] -> String -> Bool -> [String]
 afterSignHelper [] _ _ = []
-afterSignHelper (x:xs) sign reached = if reached then (x : (afterSignHelper xs sign reached)) else afterSignHelper xs sign reached
+afterSignHelper (x:xs) sign reached = if x == ">" then afterSignHelper xs sign True else if reached then (x : (afterSignHelper xs sign reached)) else afterSignHelper xs sign reached
+
+getMaxId :: [IntToNodeMap] -> Int
+getMaxId [] = 0
+getMaxId (x:xs) = max (getIdFromINRecord x) (getMaxId xs) 
+
+addToAl :: Int -> Int -> [AdjacencyList] -> [AdjacencyList]
+addToAl id newId fsAdjacencyList = ((ALRecord (getIdFromAlRecord thatNode) (newId : (decomposeAlRecord thatNode))) : otherNodes) where otherNodes = filter (\ record -> (getIdFromAlRecord record /= id)) fsAdjacencyList
+                                                                                                                                       thatNode = getHeadFromList (filter (\ record -> getIdFromAlRecord record == id) fsAdjacencyList) 
+
+createNewFile :: Int -> String -> String -> [IntToNodeMap] -> [ParrentList] -> [AdjacencyList] -> IO()
+createNewFile fs name cont fsIntToNodeMap fsParrentList fsAdjacencyList = inputCommand fs ((INRecord newId (File name cont)) : fsIntToNodeMap) ((PLRecord newId fs) : fsParrentList) (addToAl fs newId ((ALRecord newId []) : fsAdjacencyList)) where newId = (getMaxId fsIntToNodeMap) + 1
 
 afterSign :: [String] -> String -> [String]
 afterSign ls sign = afterSignHelper ls sign False
 
-
 catCmdProcess :: Int -> [String] -> [IntToNodeMap] -> [ParrentList] -> [AdjacencyList] -> IO()
-catCmdProcess fs ls fsIntToNodeMap fsParrentList fsAdjacencyList = if (afterSign ls ">") == [] then putStrLn (catFilesToString fs (map (\ p -> getNodeFromPath p fs fsParrentList fsAdjacencyList fsIntToNodeMap) ls) fsIntToNodeMap) else putStrLn "Not implemented"
+catCmdProcess fs ls fsIntToNodeMap fsParrentList fsAdjacencyList = if (afterSign ls ">") == [] then putStrLn (catFilesToString fs (map (\ p -> getNodeFromPath p fs fsParrentList fsAdjacencyList fsIntToNodeMap) (beforeSign ls ">") ) fsIntToNodeMap) else createNewFile fs (getHeadFromList (afterSign ls ">")) (catFilesToString fs (map (\ p -> getNodeFromPath p fs fsParrentList fsAdjacencyList fsIntToNodeMap) (beforeSign ls ">") ) fsIntToNodeMap) fsIntToNodeMap fsParrentList fsAdjacencyList
 
 processCommand :: Int -> [String] -> [IntToNodeMap] -> [ParrentList] -> [AdjacencyList] -> IO()
 processCommand _ [] _ _ _ = error "Empty command"
@@ -141,9 +151,6 @@ processCommand fs (x:xs) fsIntToNodeMap fsParrentList fsAdjacencyList = do
               "cd" -> inputCommand  (getNodeFromPath (head xs) fs fsParrentList fsAdjacencyList fsIntToNodeMap) fsIntToNodeMap fsParrentList fsAdjacencyList
               "ls" -> if xs == [] then lsCmd fs fsAdjacencyList fsIntToNodeMap else lsCmd (getNodeFromPath (getHeadFromList xs) fs fsParrentList fsAdjacencyList fsIntToNodeMap) fsAdjacencyList fsIntToNodeMap
               "rm" -> inputCommand fs (trd3 res) (fst3 res) (snd3 res) where res = (rm fs xs fsParrentList fsAdjacencyList fsIntToNodeMap)
-              "pinm" -> print fsIntToNodeMap
-              "pal" -> print fsAdjacencyList
-              "ppl" -> print fsParrentList
               "cat" -> catCmdProcess fs xs fsIntToNodeMap fsParrentList fsAdjacencyList
               otherwise -> putStrLn "Unknown command"
     inputCommand fs fsIntToNodeMap fsParrentList fsAdjacencyList
