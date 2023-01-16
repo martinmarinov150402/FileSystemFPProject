@@ -85,6 +85,11 @@ hasChildWithName :: [Tree String] -> String -> Bool
 hasChildWithName [] _ = False
 hasChildWithName children name = (filter (\ f -> (isFile f) /= True || (checkFileName f name) == True ) children) /= []
 
+addToParrent :: Tree String -> Tree String -> Tree String
+addToParrent EmptyNode _ = EmptyNode
+addToParrent (Node par name chidren) file = (Node (addToParrent par file) name (file : chidren))
+
+
 removeFromParrent :: Tree String -> Tree String -> Tree String
 removeFromParrent EmptyNode _  = EmptyNode
 removeFromParrent (Node p2 nodeN children) callTree = (Node (removeFromParrent p2 (Node p2 nodeN (callTree : filter (\n -> (rootT n) /= (rootT callTree)) children))) nodeN (callTree : filter (\n -> (rootT n) /= (rootT callTree)) children))
@@ -107,6 +112,7 @@ getHead :: [String] -> String
 getHead (x:xs) = x
 
 getAfterSign :: [String] -> String
+getAfterSign [] = ""
 getAfterSign (x:xs) = if x == ">" then getHead xs else getAfterSign xs
 
 getBeforeSign :: [String] -> [String]
@@ -127,7 +133,7 @@ processCommand fs (x:xs) = do
               "cd" -> inputCommand $ getNodeFromPath (head xs) fs
               "ls" -> if xs == [] then putStrLn (ls Nothing fs) else putStrLn (ls (Just (head xs)) fs)
               "rm" -> inputCommand $ rmcmd xs fs  
-              "cat" -> putStrLn $ catCmd xs fs 
+              "cat" -> catCmdProcess xs fs 
               otherwise -> putStrLn "Unknown command"
     inputCommand fs
 
