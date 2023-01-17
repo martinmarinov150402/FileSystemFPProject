@@ -144,14 +144,27 @@ afterSign ls sign = afterSignHelper ls sign False
 catCmdProcess :: Int -> [String] -> [IntToNodeMap] -> [ParrentList] -> [AdjacencyList] -> IO()
 catCmdProcess fs ls fsIntToNodeMap fsParrentList fsAdjacencyList = if (afterSign ls ">") == [] then putStrLn (catFilesToString fs (map (\ p -> getNodeFromPath p fs fsParrentList fsAdjacencyList fsIntToNodeMap) (beforeSign ls ">") ) fsIntToNodeMap) else createNewFile fs (getHeadFromList (afterSign ls ">")) (catFilesToString fs (map (\ p -> getNodeFromPath p fs fsParrentList fsAdjacencyList fsIntToNodeMap) (beforeSign ls ">") ) fsIntToNodeMap) fsIntToNodeMap fsParrentList fsAdjacencyList
 
+cmdPwd:: Int -> [IntToNodeMap] -> [ParrentList] -> String
+cmdPwd 0 fsIntToNodeMap fsParrentList = "/"
+cmdPwd fs fsIntToNodeMap fsParrentList = (cmdPwd (getParrentOfId fs fsParrentList) fsIntToNodeMap fsParrentList) ++ (getNodeNameFromID fs fsIntToNodeMap)
+
+concatAllStringsInListWithSpacesBetween :: [String] -> String
+concatAllStringsInListWithSpacesBetween [] = ""
+concatAllStringsInListWithSpacesBetween (x:xs) = x ++ " " ++ concatAllStringsInListWithSpacesBetween xs
+
+mkfileCmd :: Int -> [String] -> [IntToNodeMap] -> [ParrentList] -> [AdjacencyList] -> IO()
+mkfileCmd _ [] _ _ _ = putStrLn("This command requires 2 arguments")
+mkfileCmd fs (x:xs) fsIntToNodeMap fsParrentList fsAdjacencyList = if xs == [] then putStrLn("This command requires 2 arguments") else createNewFile fs x (concatAllStringsInListWithSpacesBetween xs) fsIntToNodeMap fsParrentList fsAdjacencyList
+
 processCommand :: Int -> [String] -> [IntToNodeMap] -> [ParrentList] -> [AdjacencyList] -> IO()
 processCommand _ [] _ _ _ = error "Empty command"
 processCommand fs (x:xs) fsIntToNodeMap fsParrentList fsAdjacencyList = do
-    case x of "pwd" -> putStrLn (getNodeNameFromID fs fsIntToNodeMap)
+    case x of "pwd" -> putStrLn (cmdPwd fs fsIntToNodeMap fsParrentList)
               "cd" -> inputCommand  (getNodeFromPath (head xs) fs fsParrentList fsAdjacencyList fsIntToNodeMap) fsIntToNodeMap fsParrentList fsAdjacencyList
               "ls" -> if xs == [] then lsCmd fs fsAdjacencyList fsIntToNodeMap else lsCmd (getNodeFromPath (getHeadFromList xs) fs fsParrentList fsAdjacencyList fsIntToNodeMap) fsAdjacencyList fsIntToNodeMap
               "rm" -> inputCommand fs (trd3 res) (fst3 res) (snd3 res) where res = (rm fs xs fsParrentList fsAdjacencyList fsIntToNodeMap)
               "cat" -> catCmdProcess fs xs fsIntToNodeMap fsParrentList fsAdjacencyList
+              "mkfile" -> mkfileCmd fs xs fsIntToNodeMap fsParrentList fsAdjacencyList
               otherwise -> putStrLn "Unknown command"
     inputCommand fs fsIntToNodeMap fsParrentList fsAdjacencyList
 
