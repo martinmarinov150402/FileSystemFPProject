@@ -182,9 +182,6 @@ processCommand fs (x:xs) fsIntToNodeMap fsParrentList fsAdjacencyList = do
               "rm" -> inputCommand fs (trd3 res) (fst3 res) (snd3 res) where res = (rm fs xs fsParrentList fsAdjacencyList fsIntToNodeMap)
               "cat" -> catCmdProcess fs xs fsIntToNodeMap fsParrentList fsAdjacencyList
               "mkfile" -> mkfileCmd fs xs fsIntToNodeMap fsParrentList fsAdjacencyList
-              "pal" -> print fsAdjacencyList
-              "ppl" -> print fsParrentList
-              "pinm" -> print fsIntToNodeMap
               "save" -> saveFs fsIntToNodeMap fsParrentList fsAdjacencyList
               otherwise -> putStrLn "Unknown command"
     inputCommand fs fsIntToNodeMap fsParrentList fsAdjacencyList
